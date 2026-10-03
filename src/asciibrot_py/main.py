@@ -9,7 +9,6 @@ Nutzung:
 import argparse
 import time
 import sys
-import os
 
 # Zeichenskala: wenig Iterationen (weit außen) -> Punkt, viele -> dichte Zeichen
 CHARS = " .:-=+*#%@"
@@ -55,10 +54,8 @@ def render(
 
 def clear_screen():
     """Clear the terminal screen."""
-    if sys.platform == "win32":
-        os.system("cls")
-    else:
-        os.system("clear")
+    sys.stdout.write("\x1b[2J\x1b[H")
+    sys.stdout.flush()
 
 
 def get_user_rate():
@@ -81,13 +78,17 @@ def zoom_loop(width, height, max_iter, center_r, center_i, initial_zoom, rate):
     """Continuously zoom into the fractal at the given rate."""
     zoom = initial_zoom
     zoom_factor = 0.9  # Each frame zooms in by 10%
+    clear_screen()
     
     try:
         while True:
-            clear_screen()
             rate_label = "max (no delay)" if rate == 0 else f"{rate:.2f} fps"
-            print(f"Zoom: {zoom:.6f} | Rate: {rate_label} | Press Ctrl+C to stop")
-            print(render(width, height, max_iter, center_r, center_i, zoom))
+            frame = render(width, height, max_iter, center_r, center_i, zoom)
+            sys.stdout.write(
+                f"\x1b[HZoom: {zoom:.6f} | Rate: {rate_label} | "
+                f"Press Ctrl+C to stop\x1b[K\n{frame}\n\x1b[J"
+            )
+            sys.stdout.flush()
             
             if rate > 0:
                 time.sleep(1.0 / rate)

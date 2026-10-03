@@ -7,6 +7,9 @@ Nutzung:
 """
 
 import argparse
+import time
+import sys
+import os
 
 # Zeichenskala: wenig Iterationen (weit außen) -> Punkt, viele -> dichte Zeichen
 CHARS = " .:-=+*#%@"
@@ -50,6 +53,51 @@ def render(
     return "\n".join(lines)
 
 
+def clear_screen():
+    """Clear the terminal screen."""
+    if sys.platform == "win32":
+        os.system("cls")
+    else:
+        os.system("clear")
+
+
+def get_user_rate():
+    """Ask user for zoom rate or to quit."""
+    while True:
+        try:
+            user_input = input("Enter zoom rate (frames per second, or 'q' to quit): ")
+            if user_input.lower() == 'q':
+                return None
+            rate = float(user_input)
+            if rate <= 0:
+                print("Rate must be positive.")
+                continue
+            return rate
+        except ValueError:
+            print("Please enter a valid number or 'q' to quit.")
+
+
+def zoom_loop(width, height, max_iter, center_r, center_i, initial_zoom, rate):
+    """Continuously zoom into the fractal at the given rate."""
+    zoom = initial_zoom
+    zoom_factor = 0.9  # Each frame zooms in by 10%
+    
+    try:
+        while True:
+            clear_screen()
+            print(f"Zoom: {zoom:.6f} | Rate: {rate:.2f} fps | Press Ctrl+C to stop")
+            print(render(width, height, max_iter, center_r, center_i, zoom))
+            
+            # Calculate sleep time to achieve the desired rate
+            frame_time = 1.0 / rate
+            time.sleep(frame_time)
+            
+            # Zoom in for next frame
+            zoom *= zoom_factor
+    except KeyboardInterrupt:
+        pass  # Will return to main menu
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="ASCII-Mandelbrot im Terminal")
     parser.add_argument(
@@ -77,7 +125,17 @@ def main() -> None:
 
     center_r, center_i = (float(v) for v in args.center.split(","))
 
-    print(render(args.width, args.height, args.iter, center_r, center_i, args.zoom))
+    # Main interactive loop
+    while True:
+        try:
+            rate = get_user_rate()
+            if rate is None:
+                print("Goodbye!")
+                break
+            
+            zoom_loop(args.width, args.height, args.iter, center_r, center_i, args.zoom, rate)
+        except KeyboardInterrupt:
+            pass  # Continue to next iteration of main loop
 
 
 if __name__ == "__main__":

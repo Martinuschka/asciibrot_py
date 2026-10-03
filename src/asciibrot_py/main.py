@@ -7,6 +7,8 @@ Nutzung:
 """
 
 import argparse
+import time
+import sys
 
 # Zeichenskala: wenig Iterationen (weit außen) -> Punkt, viele -> dichte Zeichen
 CHARS = " .:-=+*#%@"
@@ -50,6 +52,53 @@ def render(
     return "\n".join(lines)
 
 
+def clear_screen():
+    """Clear the terminal screen."""
+    sys.stdout.write("\x1b[2J\x1b[H")
+    sys.stdout.flush()
+
+
+def get_user_rate():
+    """Ask user for zoom rate or to quit."""
+    while True:
+        try:
+            user_input = input("Enter zoom rate (frames per second, or 'q' to quit): ")
+            if user_input.lower() == 'q':
+                return None
+            rate = float(user_input)
+            if rate < 0:
+                print("Rate must be zero or positive.")
+                continue
+            return rate
+        except ValueError:
+            print("Please enter a valid number or 'q' to quit.")
+
+
+def zoom_loop(width, height, max_iter, center_r, center_i, initial_zoom, rate):
+    """Continuously zoom into the fractal at the given rate."""
+    zoom = initial_zoom
+    zoom_factor = 0.9  # Each frame zooms in by 10%
+    clear_screen()
+    
+    try:
+        while True:
+            rate_label = "max (no delay)" if rate == 0 else f"{rate:.2f} fps"
+            frame = render(width, height, max_iter, center_r, center_i, zoom)
+            sys.stdout.write(
+                f"\x1b[HZoom: {zoom:.6f} | Rate: {rate_label} | "
+                f"Press Ctrl+C to stop\x1b[K\n{frame}\n\x1b[J"
+            )
+            sys.stdout.flush()
+            
+            if rate > 0:
+                time.sleep(1.0 / rate)
+            
+            # Zoom in for next frame
+            zoom *= zoom_factor
+    except KeyboardInterrupt:
+        pass  # Will return to main menu
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="ASCII-Mandelbrot im Terminal")
     parser.add_argument(
@@ -64,8 +113,8 @@ def main() -> None:
     parser.add_argument(
         "--center",
         type=str,
-        default="-0.5,0",
-        help="Zentrum als 'real,imag' (Standard: -0.5,0)",
+        default="-0.77568377,0.13646737",
+        help="Zentrum als 'real,imag' (Standard: Spiralregion -0.77568377,0.13646737)",
     )
     parser.add_argument(
         "--zoom",
@@ -77,7 +126,17 @@ def main() -> None:
 
     center_r, center_i = (float(v) for v in args.center.split(","))
 
-    print(render(args.width, args.height, args.iter, center_r, center_i, args.zoom))
+    # Main interactive loop
+    while True:
+        try:
+            rate = get_user_rate()
+            if rate is None:
+                print("Goodbye!")
+                break
+            
+            zoom_loop(args.width, args.height, args.iter, center_r, center_i, args.zoom, rate)
+        except KeyboardInterrupt:
+            pass  # Continue to next iteration of main loop
 
 
 if __name__ == "__main__":

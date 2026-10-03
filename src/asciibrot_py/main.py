@@ -69,8 +69,8 @@ def get_user_rate():
             if user_input.lower() == 'q':
                 return None
             rate = float(user_input)
-            if rate <= 0:
-                print("Rate must be positive.")
+            if rate < 0:
+                print("Rate must be zero or positive.")
                 continue
             return rate
         except ValueError:
@@ -85,12 +85,12 @@ def zoom_loop(width, height, max_iter, center_r, center_i, initial_zoom, rate):
     try:
         while True:
             clear_screen()
-            print(f"Zoom: {zoom:.6f} | Rate: {rate:.2f} fps | Press Ctrl+C to stop")
+            rate_label = "max (no delay)" if rate == 0 else f"{rate:.2f} fps"
+            print(f"Zoom: {zoom:.6f} | Rate: {rate_label} | Press Ctrl+C to stop")
             print(render(width, height, max_iter, center_r, center_i, zoom))
             
-            # Calculate sleep time to achieve the desired rate
-            frame_time = 1.0 / rate
-            time.sleep(frame_time)
+            if rate > 0:
+                time.sleep(1.0 / rate)
             
             # Zoom in for next frame
             zoom *= zoom_factor
@@ -112,8 +112,8 @@ def main() -> None:
     parser.add_argument(
         "--center",
         type=str,
-        default="-0.5,0",
-        help="Zentrum als 'real,imag' (Standard: -0.5,0)",
+        default="-0.77568377,0.13646737",
+        help="Zentrum als 'real,imag' (Standard: Spiralregion -0.77568377,0.13646737)",
     )
     parser.add_argument(
         "--zoom",

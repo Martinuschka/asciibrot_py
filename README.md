@@ -33,16 +33,16 @@ uv run asciibrot_py --help
 
 ## Usage
 
-Run the program with the default settings:
+Run the program with the default settings. The zoom starts at the Mandelbrot spiral region:
 
 ```bash
 asciibrot_py
 ```
 
-Customize the output:
+Customize the output or choose another center:
 
 ```bash
-asciibrot_py --width 120 --height 40 --iter 100 --center -0.5,0 --zoom 3.0
+asciibrot_py --width 120 --height 40 --iter 100 --center -0.77568377,0.13646737 --zoom 3.0
 ```
 
 ## Options
@@ -50,13 +50,13 @@ asciibrot_py --width 120 --height 40 --iter 100 --center -0.5,0 --zoom 3.0
 - `--width`: Width of the rendered image in characters
 - `--height`: Height of the rendered image in characters
 - `--iter`: Maximum number of Mandelbrot iterations
-- `--center`: Complex center as `real,imag` (for example `-0.5,0`)
+- `--center`: Complex center as `real,imag` (default: spiral region `-0.77568377,0.13646737`)
 - `--zoom`: Zoom level; smaller values zoom in
 
 ## Vista
 
-Exciting coordinates to try out (show the famous Seahorse Valley):
+The default zoom center is the famous Seahorse region:
 
 ```text
---center -0.7441,0.0005 --zoom 0.005 --iter 200
+--center -0.77568377,0.13646737
 ```

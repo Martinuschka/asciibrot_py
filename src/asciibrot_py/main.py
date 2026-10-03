@@ -7,8 +7,8 @@ Nutzung:
 """
 
 import argparse
-import time
 import sys
+import time
 
 # Zeichenskala: wenig Iterationen (weit außen) -> Punkt, viele -> dichte Zeichen
 CHARS = " .:-=+*#%@"
@@ -63,7 +63,7 @@ def get_user_rate():
     while True:
         try:
             user_input = input("Enter zoom rate (frames per second, or 'q' to quit): ")
-            if user_input.lower() == 'q':
+            if user_input.lower() == "q":
                 return None
             rate = float(user_input)
             if rate < 0:
@@ -79,7 +79,7 @@ def zoom_loop(width, height, max_iter, center_r, center_i, initial_zoom, rate):
     zoom = initial_zoom
     zoom_factor = 0.9  # Each frame zooms in by 10%
     clear_screen()
-    
+
     try:
         while True:
             rate_label = "max (no delay)" if rate == 0 else f"{rate:.2f} fps"
@@ -89,10 +89,10 @@ def zoom_loop(width, height, max_iter, center_r, center_i, initial_zoom, rate):
                 f"Press Ctrl+C to stop\x1b[K\n{frame}\n\x1b[J"
             )
             sys.stdout.flush()
-            
+
             if rate > 0:
                 time.sleep(1.0 / rate)
-            
+
             # Zoom in for next frame
             zoom *= zoom_factor
     except KeyboardInterrupt:
@@ -133,8 +133,10 @@ def main() -> None:
             if rate is None:
                 print("Goodbye!")
                 break
-            
-            zoom_loop(args.width, args.height, args.iter, center_r, center_i, args.zoom, rate)
+
+            zoom_loop(
+                args.width, args.height, args.iter, center_r, center_i, args.zoom, rate
+            )
         except KeyboardInterrupt:
             pass  # Continue to next iteration of main loop
 

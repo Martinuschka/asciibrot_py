@@ -58,5 +58,5 @@ asciibrot_py --width 120 --height 40 --iter 100 --center -0.77568377,0.13646737 
 The default zoom center is the famous Seahorse region:
 
 ```text
---center -0.77568377,0.13646737
+--center -0.743643887037151,0.131825904205330
 ```

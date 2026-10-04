@@ -9,9 +9,12 @@ Nutzung:
 import argparse
 import sys
 import time
+import math
 
 # Zeichenskala: wenig Iterationen (weit außen) -> Punkt, viele -> dichte Zeichen
 CHARS = " .:-=+*#%@"
+
+MIN_ZOOM = 1e-13  # Grenze von float64
 
 
 def mandelbrot_pixel(cr: float, ci: float, max_iter: int) -> int:
@@ -25,30 +28,31 @@ def mandelbrot_pixel(cr: float, ci: float, max_iter: int) -> int:
     return max_iter
 
 
-def render(
-    width: int,
-    height: int,
-    max_iter: int,
-    center_r: float,
-    center_i: float,
-    zoom: float,
-) -> str:
-    # zoom = Höhe des sichtbaren Ausschnitts in der komplexen Ebene.
-    # Der Faktor 2.1 gleicht das breitere Terminal-Zeichen aus.
+def render(width, height, max_iter, center_r, center_i, zoom):
     scale_r = zoom * (width / height) / 2.1
     scale_i = zoom / 2.0
 
-    lines = []
+    grid = []
     for row in range(height):
         ci = center_i + (row / height - 0.5) * scale_i * 2.0
-        line = []
-        for col in range(width):
-            cr = center_r + (col / width - 0.5) * scale_r * 2.0
-            n = mandelbrot_pixel(cr, ci, max_iter)
-            # Iterationszahl auf die Zeichenskala mappen
-            idx = int(n / max_iter * (len(CHARS) - 1))
-            line.append(CHARS[idx])
-        lines.append("".join(line))
+        grid.append([
+            mandelbrot_pixel(center_r + (col / width - 0.5) * scale_r * 2.0, ci, max_iter)
+            for col in range(width)
+        ])
+
+    # Normalisierung pro Frame: nur auf die tatsächlich divergierten Pixel
+    escaped = [n for row in grid for n in row if n < max_iter]
+    lo, hi = (min(escaped), max(escaped)) if escaped else (0, 1)
+    span = max(hi - lo, 1)
+    ramp = CHARS[:-1]  # "@" nur für Punkte innerhalb der Menge
+
+    lines = []
+    for row in grid:
+        lines.append("".join(
+            "@" if n >= max_iter
+            else ramp[int((n - lo) / span * (len(ramp) - 1))]
+            for n in row
+        ))
     return "\n".join(lines)
 
 
@@ -82,10 +86,13 @@ def zoom_loop(width, height, max_iter, center_r, center_i, initial_zoom, rate):
 
     try:
         while True:
+            # Iterationen wachsen mit der Zoomtiefe
+            iters = int(max_iter + 40 * math.log2(initial_zoom / zoom))
+
             rate_label = "max (no delay)" if rate == 0 else f"{rate:.2f} fps"
-            frame = render(width, height, max_iter, center_r, center_i, zoom)
+            frame = render(width, height, iters, center_r, center_i, zoom)
             sys.stdout.write(
-                f"\x1b[HZoom: {zoom:.6f} | Rate: {rate_label} | "
+                f"\x1b[HZoom: {zoom:.3e} | Iter: {iters} | Rate: {rate_label} | "
                 f"Press Ctrl+C to stop\x1b[K\n{frame}\n\x1b[J"
             )
             sys.stdout.flush()
@@ -95,6 +102,10 @@ def zoom_loop(width, height, max_iter, center_r, center_i, initial_zoom, rate):
 
             # Zoom in for next frame
             zoom *= zoom_factor
+
+            # float64 ist erschöpft -> von vorne beginnen
+            if zoom < MIN_ZOOM:
+                zoom = initial_zoom
     except KeyboardInterrupt:
         pass  # Will return to main menu
 
@@ -113,8 +124,8 @@ def main() -> None:
     parser.add_argument(
         "--center",
         type=str,
-        default="-0.77568377,0.13646737",
-        help="Zentrum als 'real,imag' (Standard: Spiralregion -0.77568377,0.13646737)",
+        default="-0.743643887037151,0.131825904205330",
+        help="Zentrum als 'real,imag' (Standard: Spiralregion -0.743643887037151,0.131825904205330)",
     )
     parser.add_argument(
         "--zoom",

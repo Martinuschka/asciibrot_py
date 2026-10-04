@@ -7,14 +7,15 @@ Nutzung:
 """
 
 import argparse
+import math
 import sys
 import time
-import math
 
 # Zeichenskala: wenig Iterationen (weit außen) -> Punkt, viele -> dichte Zeichen
 CHARS = " .:-=+*#%@"
 
-MIN_ZOOM = 1e-13  # Grenze von float64
+# Grenze von float64: darunter fallen benachbarte Pixel auf denselben Wert
+MIN_ZOOM = 1e-13
 
 
 def mandelbrot_pixel(cr: float, ci: float, max_iter: int) -> int:
@@ -35,10 +36,14 @@ def render(width, height, max_iter, center_r, center_i, zoom):
     grid = []
     for row in range(height):
         ci = center_i + (row / height - 0.5) * scale_i * 2.0
-        grid.append([
-            mandelbrot_pixel(center_r + (col / width - 0.5) * scale_r * 2.0, ci, max_iter)
-            for col in range(width)
-        ])
+        grid.append(
+            [
+                mandelbrot_pixel(
+                    center_r + (col / width - 0.5) * scale_r * 2.0, ci, max_iter
+                )
+                for col in range(width)
+            ]
+        )
 
     # Normalisierung pro Frame: nur auf die tatsächlich divergierten Pixel
     escaped = [n for row in grid for n in row if n < max_iter]
@@ -48,11 +53,12 @@ def render(width, height, max_iter, center_r, center_i, zoom):
 
     lines = []
     for row in grid:
-        lines.append("".join(
-            "@" if n >= max_iter
-            else ramp[int((n - lo) / span * (len(ramp) - 1))]
-            for n in row
-        ))
+        lines.append(
+            "".join(
+                "@" if n >= max_iter else ramp[int((n - lo) / span * (len(ramp) - 1))]
+                for n in row
+            )
+        )
     return "\n".join(lines)
 
 
